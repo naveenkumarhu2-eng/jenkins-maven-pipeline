@@ -1,0 +1,63 @@
+pipeline {
+    agent any
+
+    tools {
+        maven 'Maven-3.9.6'   // You will set this name in Jenkins Global Tool Config
+        jdk 'jdk-17'         // You will set this name in Jenkins Global Tool Config
+    }
+
+    stages {
+        stage('Checkout') {
+            steps {
+                echo "Checking out source code from Git..."
+                checkout scm
+            }
+        }
+
+        stage('Build') {
+            steps {
+                echo "Building the application..."
+                sh 'mvn clean compile'
+            }
+        }
+
+        stage('Test') {
+            steps {
+                echo "Running unit tests..."
+                sh 'mvn test'
+            }
+            post {
+                always {
+                    junit '**/target/surefire-reports/*.xml'
+                }
+            }
+        }
+
+        stage('Package') {
+            steps {
+                echo "Packaging application into a JAR..."
+                sh 'mvn package'
+            }
+        }
+
+        stage('Deploy') {
+            steps {
+                echo "Simulating deployment..."
+                sh '''
+                    mkdir -p /tmp/deploy
+                    cp target/jenkins-maven-pipeline-1.0-SNAPSHOT.jar /tmp/deploy/
+                    echo "App deployed to /tmp/deploy"
+                '''
+            }
+        }
+    }
+
+    post {
+        success {
+            echo '✅ Build, Test, and Deploy stages completed successfully!'
+        }
+        failure {
+            echo '❌ Build failed. Please check logs.'
+        }
+    }
+}
